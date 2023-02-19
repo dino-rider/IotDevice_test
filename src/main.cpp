@@ -1,11 +1,12 @@
 #include "IotDevice.h"
+#include "config.h"
 
 EspMQTTClient client(
-                      "TP-Link_EB4A",
-                      "61151369",
-                      "test.mosquitto.org",
-                      "den-k-test0003",
-                      1883
+                      CONFIG_SSID,
+                      CONFIG_PASS,
+                      CONFIG_MQTTBROKER,
+                      CONFIG_MQTTNAME,
+                      CONFIG_MQTTPORT
                       );
 IotDevice device{client};
 
