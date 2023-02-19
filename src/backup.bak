@@ -1,0 +1,58 @@
+#include <Arduino.h>
+#include "EspMQTTClient.h"
+
+EspMQTTClient client(
+  "TP-Link_EB4A",
+  "61151369",
+  "test.mosquitto.org",  // MQTT Broker server ip
+  "den-k-test0003",     // Client name that uniquely identify your device
+  1883              // The MQTT port, default to 1883. this line can be omitted
+);
+
+void setup()
+{
+  Serial.begin(115200);
+  pinMode(2, OUTPUT);
+  // Optional functionalities of EspMQTTClient
+  client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
+  // client.enableHTTPWebUpdater(); // Enable the web updater. User and password default to values of MQTTUsername and MQTTPassword. These can be overridded with enableHTTPWebUpdater("user", "password").
+  // client.enableOTA(); // Enable OTA (Over The Air) updates. Password defaults to MQTTPassword. Port is the default OTA port. Can be overridden with enableOTA("password", port).
+  client.enableLastWillMessage("den-k-89-house/status/online", "lost", true);  // You can activate the retain flag by setting the third parameter to true
+}
+
+
+void onConnectionEstablished()
+{
+  Serial.println("Connected");
+  client.subscribe("den-k-89-house/light", [](const String & payload) {
+    if (payload == "ON")
+    {
+      digitalWrite(2,HIGH);
+    }
+    if (payload == "OFF")
+    {
+      digitalWrite(2,LOW);
+    }
+    Serial.println(payload);
+  });
+
+  client.subscribe("den-k-89-house/wifiStrengthRequest",[](const String & payload) {
+    Serial.println(payload);
+    if (payload == "GET")
+    {
+      int sig = (2*(100+WiFi.RSSI(),0,100));
+      if (sig<0) { sig = 0; }
+      if (sig>100) {sig = 100;}
+      
+      Serial.print("WiFi strength is ");
+      Serial.println(sig);
+      client.publish("den-k-89-house/wifiStrengthReply",String(sig));
+    }
+
+  });
+}
+
+void loop()
+{
+  client.loop();
+}
